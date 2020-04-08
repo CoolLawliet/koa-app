@@ -22,6 +22,17 @@ router.get('/test', async ctx => {
 router.get('/',
     passport.authenticate('jwt', {session: false}),
     async ctx => {
-
+        const profile = await Profile.find({user:ctx.state.user.id}).populate('user', [
+            "name",
+            "avatar"
+        ])
+        if (profile.length>0){
+            ctx.status=200;
+            ctx.body = profile
+        }else {
+            ctx.status=404;
+            ctx.body={noprofile:'该用户没有任何相关的个人信息'}
+            return;
+        }
     })
 module.exports = router.routes()
