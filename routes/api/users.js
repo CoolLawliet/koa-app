@@ -1,7 +1,10 @@
 const Router = require('koa-router');
 const router = new Router();
 const tools = require('../../config/tools')
+const keys = require('../../config/keys')
 const gravatar = require('gravatar')
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 //引入User
 const User = require('../../models/User')
@@ -46,4 +49,37 @@ router.post('/register',async ctx=>{
         ctx.body=newUser
     }
 });
+
+/**
+ * @route POST api/users/login
+ * @desc 登录接口
+ * @access 接口是公开的
+ * */
+router.post('/login',async ctx =>{
+    //查询
+    const findResult=await User.find({email:ctx.request.body.email});
+    const user = findResult[0]
+    const password=ctx.request.body.password
+
+    //判断
+    if (findResult.length===0){
+        ctx.status=404;
+        ctx.body={email:"用户不存在"}
+    }else {
+        //验证密码
+        var result = await bcrypt.compareSync(password,user.password);//true
+
+        //验证通过
+        if (result){
+            //返回token
+            const payload = {id:user.id,name:user.name,avatar:user.avatar};
+            const token =jwt.sign(payload,keys.secretOrKey,{expiresIn:3600});
+            ctx.status=200;
+            ctx.body={success:true,token:"Bearer "+token};
+        }else {
+            ctx.status=400;
+            ctx.body={password:'密码错误'};
+        }
+    }
+})
 module.exports = router.routes()
