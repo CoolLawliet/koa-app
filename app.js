@@ -1,10 +1,13 @@
 const koa = require('koa');
 const Router = require('koa-router');
 const mongoose = require('mongoose');
+const bodyParser = require('koa-bodyparser');
 
 //实例化koa‘
 const app = new koa();
 const router = new Router();
+
+app.use(bodyParser());
 
 //引入users.js
 const users = require('./routes/api/users')
