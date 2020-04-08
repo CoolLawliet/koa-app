@@ -9,6 +9,10 @@ const passport = require('koa-passport')
 
 //引入User
 const User = require('../../models/User')
+
+//引入验证
+const validateRegisterInput = require('../../validation/register')
+const validateLoginInput = require('../../validation/login')
 /**
  * @route GET api/users/test
  * @desc 测试接口
@@ -25,6 +29,15 @@ router.get('/test', async ctx => {
  * @access 接口是公开的
  * */
 router.post('/register', async ctx => {
+
+    const {errors,isValid} =validateRegisterInput(ctx.request.body);
+
+    //判断是否验证通过
+    if (!isValid){
+        ctx.status=400;
+        ctx.body=errors
+        return
+    }
     //存储到数据库
     const findResult = await User.find({email: ctx.request.body.email});
     if (findResult.length > 0) {
@@ -57,6 +70,14 @@ router.post('/register', async ctx => {
  * @access 接口是公开的
  * */
 router.post('/login', async ctx => {
+    const {errors,isValid} =validateLoginInput(ctx.request.body);
+
+    //判断是否验证通过
+    if (!isValid){
+        ctx.status=400;
+        ctx.body=errors
+        return
+    }
     //查询
     const findResult = await User.find({email: ctx.request.body.email});
     const user = findResult[0]
