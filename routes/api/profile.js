@@ -8,6 +8,7 @@ const Profile = require('../../models/Profile')
 //引入验证
 const validateProfileInput = require('../../validation/profile')
 const validateExperienceInput = require('../../validation/experience')
+const validateEducationInput = require('../../validation/education')
 /**
  * @route GET api/profile/test
  * @desc 测试接口
