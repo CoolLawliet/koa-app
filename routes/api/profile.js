@@ -4,6 +4,7 @@ const passport = require('koa-passport')
 
 //引入Profile
 const Profile = require('../../models/Profile')
+const User = require('../../models/User')
 
 //引入验证
 const validateProfileInput = require('../../validation/profile')
@@ -160,7 +161,7 @@ router.get('/all', async ctx => {
 
 /**
  * @route POST api/profile/experience
- * @desc 工作经验接口
+ * @desc 工作经验添加接口
  * @access 接口是私有的
  * */
 router.post('/experience',
@@ -189,13 +190,22 @@ router.post('/experience',
                 description: ctx.request.body.description,
             };
             profileFields.experience.unshift(newExp);
-            const profileUpdate = await Profile.findOneAndUpdate(
+            const profileUpdate = await Profile.update(
                 {user: ctx.state.user.id},
-                {$set: profileFields},
-                {new:true}
+                {$push: {experience:profileFields.experience}},
+                {$sort:1}
             );
 
-            ctx.body = profileUpdate
+            // ctx.body = profileUpdate
+            if (profileUpdate.ok===1){
+                const profile = await Profile.find({user: ctx.state.user.id})
+                    .populate("user",['name','avatar'])
+
+                if (profile){
+                    ctx.status=200;
+                    ctx.body=profile
+                }
+            }
         }else {
             errors.noprofile ='没有该用户信息';
             ctx.status=404;
@@ -206,7 +216,7 @@ router.post('/experience',
 
 /**
  * @route POST api/profile/education
- * @desc 教育接口
+ * @desc 教育经历添加接口
  * @access 接口是私有的
  * */
 router.post('/education',
@@ -234,17 +244,117 @@ router.post('/education',
                 description: ctx.request.body.description,
             };
             profileFields.education.unshift(newEdu);
-            const profileUpdate = await Profile.findOneAndUpdate(
+            const profileUpdate = await Profile.update(
                 {user: ctx.state.user.id},
-                {$set: profileFields},
-                {new:true}
+                {$push: {education:profileFields.education}},
+                {$sort:1}
             );
 
-            ctx.body = profileUpdate
+            // ctx.body = profileUpdate
+            if (profileUpdate.ok===1){
+                const profile = await Profile.find({user: ctx.state.user.id})
+                    .populate("user",['name','avatar'])
+
+                if (profile){
+                    ctx.status=200;
+                    ctx.body=profile
+                }
+            }
         }else {
             errors.noprofile ='没有该用户信息';
             ctx.status=404;
             ctx.body=errors
+        }
+    }
+)
+
+/**
+ * @route DELETE api/profile/experience?exp_id=xxxxxxx
+ * @desc 工作经验删除接口
+ * @access 接口是私有的
+ * */
+router.delete('/experience',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+    //拿到id
+        const exp_id = ctx.query.exp_id;
+
+        //查询
+        const profile = await Profile.find({user:ctx.state.user.id})
+        if (profile[0].experience.length>0){
+            //找元素下表
+            const removeIndex = profile[0].experience
+                .map(item=>item.id)
+                .indexOf(exp_id);
+            //删除
+            profile[0].experience.splice(removeIndex,1);
+            //更新数据库
+            const profileUpdate =await Profile.findOneAndUpdate(
+                {user:ctx.state.user.id},
+                {$set:profile[0]},
+                {new:true}
+            );
+
+            ctx.body = profileUpdate;
+        }else {
+            ctx.status = 404;
+            ctx.body = {errors:'没有任何数据'}
+        }
+    }
+)
+
+/**
+ * @route DELETE api/profile/education?edu_id=xxxxxxx
+ * @desc 教育经历删除接口
+ * @access 接口是私有的
+ * */
+router.delete('/education',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+        //拿到id
+        const edu_id = ctx.query.edu_id;
+        //查询
+        const profile = await Profile.find({user:ctx.state.user.id})
+        if (profile[0].education.length>0){
+            //找元素下表
+            const removeIndex = profile[0].education
+                .map(item=>item.id)
+                .indexOf(edu_id);
+            //删除
+            profile[0].education.splice(removeIndex,1);
+            //更新数据库
+            const profileUpdate =await Profile.findOneAndUpdate(
+                {user:ctx.state.user.id},
+                {$set:profile[0]},
+                {new:true}
+            );
+
+            ctx.body = profileUpdate;
+        }else {
+            ctx.status = 404;
+            ctx.body = {errors:'没有任何数据'}
+        }
+    }
+)
+
+/**
+ * @route DELETE api/profile/profile
+ * @desc 删除整个用户接口
+ * @access 接口是私有的
+ * */
+router.delete('/',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+        const profile = await Profile.deleteOne({user:ctx.state.user.id});
+        if (profile.ok===1){
+            const user =await User.deleteOne({_id:ctx.state.user.id})
+            if (user.ok===1){
+                ctx.status=200;
+                ctx.body={success:true};
+            }
+        }else {
+            ctx.status=404;
+            ctx.body={error:'profile不存在'};
         }
     }
 )
