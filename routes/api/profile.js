@@ -7,6 +7,7 @@ const Profile = require('../../models/Profile')
 
 //引入验证
 const validateProfileInput = require('../../validation/profile')
+const validateExperienceInput = require('../../validation/experience')
 /**
  * @route GET api/profile/test
  * @desc 测试接口
@@ -106,16 +107,16 @@ router.post('/',
  * @access 接口是公开的
  * */
 router.get('/handle', async ctx => {
-    const errors={}
+    const errors = {}
     const handle = ctx.query.handle;
     const profile = await Profile.find({handle: handle}).populate('user', ['name', 'avatar']);
 
-    if (profile.length<1){
-        errors.noprofile ='未找到该用户信息';
-        ctx.status=404;
-        ctx.body=errors;
-    }else {
-        ctx.body=profile[0];
+    if (profile.length < 1) {
+        errors.noprofile = '未找到该用户信息';
+        ctx.status = 404;
+        ctx.body = errors;
+    } else {
+        ctx.body = profile[0];
     }
 })
 
@@ -125,16 +126,16 @@ router.get('/handle', async ctx => {
  * @access 接口是公开的
  * */
 router.get('/user', async ctx => {
-    const errors={}
+    const errors = {}
     const user_id = ctx.query.user_id;
     const profile = await Profile.find({user: user_id}).populate('user', ['name', 'avatar']);
 
-    if (profile.length<1){
-        errors.noprofile ='未找到该用户信息';
-        ctx.status=404;
-        ctx.body=errors;
-    }else {
-        ctx.body=profile[0];
+    if (profile.length < 1) {
+        errors.noprofile = '未找到该用户信息';
+        ctx.status = 404;
+        ctx.body = errors;
+    } else {
+        ctx.body = profile[0];
     }
 })
 
@@ -144,15 +145,106 @@ router.get('/user', async ctx => {
  * @access 接口是公开的
  * */
 router.get('/all', async ctx => {
-    const errors={}
+    const errors = {}
     const profiles = await Profile.find({}).populate('user', ['name', 'avatar']);
 
-    if (profiles.length<1){
-        errors.noprofile ='没有任何用户信息';
-        ctx.status=404;
-        ctx.body=errors;
-    }else {
-        ctx.body=profiles
+    if (profiles.length < 1) {
+        errors.noprofile = '没有任何用户信息';
+        ctx.status = 404;
+        ctx.body = errors;
+    } else {
+        ctx.body = profiles
     }
 })
+
+/**
+ * @route POST api/profile/experience
+ * @desc 工作经验接口
+ * @access 接口是私有的
+ * */
+router.post('/experience',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+        const {errors, isValid} = validateExperienceInput(ctx.request.body);
+
+        //判断是否验证通过
+        if (!isValid) {
+            ctx.status = 400;
+            ctx.body = errors
+            return
+        }
+        const profileFields = {}
+        profileFields.experience=[]
+        const profile = await Profile.find({user: ctx.state.user.id})
+
+        if (profile.length > 0) {
+            const newExp = {
+                title: ctx.request.body.title,
+                current: ctx.request.body.current,
+                location: ctx.request.body.location,
+                from: ctx.request.body.from,
+                to: ctx.request.body.to,
+                company: ctx.request.body.company,
+                description: ctx.request.body.description,
+            };
+            profileFields.experience.unshift(newExp);
+            const profileUpdate = await Profile.findOneAndUpdate(
+                {user: ctx.state.user.id},
+                {$set: profileFields},
+                {new:true}
+            );
+
+            ctx.body = profileUpdate
+        }else {
+            errors.noprofile ='没有该用户信息';
+            ctx.status=404;
+            ctx.body=errors
+        }
+    }
+)
+
+/**
+ * @route POST api/profile/education
+ * @desc 教育接口
+ * @access 接口是私有的
+ * */
+router.post('/education',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+        const {errors, isValid} = validateEducationInput(ctx.request.body);
+
+        //判断是否验证通过
+        if (!isValid) {
+            ctx.status = 400;
+            ctx.body = errors
+            return
+        }
+        const profileFields = {}
+        profileFields.education=[]
+        const profile = await Profile.find({user: ctx.state.user.id})
+
+        if (profile.length > 0) {
+            const newEdu = {
+                school: ctx.request.body.school,
+                degree: ctx.request.body.degree,
+                fieldofstudy: ctx.request.body.fieldofstudy,
+                from: ctx.request.body.from,
+                to: ctx.request.body.to,
+                description: ctx.request.body.description,
+            };
+            profileFields.education.unshift(newEdu);
+            const profileUpdate = await Profile.findOneAndUpdate(
+                {user: ctx.state.user.id},
+                {$set: profileFields},
+                {new:true}
+            );
+
+            ctx.body = profileUpdate
+        }else {
+            errors.noprofile ='没有该用户信息';
+            ctx.status=404;
+            ctx.body=errors
+        }
+    }
+)
 module.exports = router.routes()
