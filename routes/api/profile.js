@@ -4,6 +4,9 @@ const passport = require('koa-passport')
 
 //引入Profile
 const Profile = require('../../models/Profile')
+
+//引入验证
+const validateProfileInput = require('../../validation/profile')
 /**
  * @route GET api/profile/test
  * @desc 测试接口
@@ -44,6 +47,15 @@ router.get('/',
 router.post('/',
     passport.authenticate('jwt', {session: false}),
     async ctx => {
+        const {errors,isValid} =validateProfileInput(ctx.request.body);
+
+        //判断是否验证通过
+        if (!isValid){
+            ctx.status=400;
+            ctx.body=errors
+            return
+        }
+
         const profileFields = {};
 
         profileFields.user = ctx.state.user.id;
