@@ -13,8 +13,7 @@ const PostSchema = new Schema({
         required:true
     },
     name:{
-        type: String,
-        required: true
+        type: String
     },
     avatar:{
         type: String,
