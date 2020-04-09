@@ -67,7 +67,7 @@ router.get('/all', async ctx => {
 
 /**
  * @route GET api/posts?id=xxxxxxx
- * @desc 单个留言接口
+ * @desc 获取单个留言接口
  * @access 接口是公开的
  * */
 router.get('/', async ctx => {
@@ -110,5 +110,136 @@ router.delete('/',
             ctx.status = 404;
             ctx.body = {error:'个人信息不存在'}
         }
+    });
+
+/**
+ * @route POST api/posts/like?id=xxxxxxxxxx
+ * @desc 点赞接口
+ * @access 接口是私有的
+ * */
+router.post('/like',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+        const id=ctx.query.id;
+
+        //查询用户信息
+        const profile = await Profile.find({user:ctx.state.user.id})
+        if (profile.length>0){
+            const post = await Post.findById(id);
+            const isLike=post.likes.filter(like=>like.user.toString()===ctx.state.user.id).length>0;
+            if (isLike){
+                ctx.status = 400;
+                ctx.body = {alerdyliked:'该用户已赞过'}
+                return
+            }
+            post.likes.unshift({user:ctx.state.user.id})
+
+            const postUpdate = await Post.findOneAndUpdate(
+                {_id:id},
+                {$set:post},
+                {new:true}
+                )
+            ctx.body = postUpdate
+        }else {
+            ctx.status = 404;
+            ctx.body = {error:'profile不存在'}
+        }
+    });
+
+/**
+ * @route POST api/posts/unlike?id=xxxxxxxxxx
+ * @desc 取消点赞接口
+ * @access 接口是私有的
+ * */
+router.post('/unlike',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+        const id=ctx.query.id;
+
+        //查询用户信息
+        const profile = await Profile.find({user:ctx.state.user.id})
+        if (profile.length>0){
+            const post = await Post.findById(id);
+            const isLike=post.likes.filter(like=>like.user.toString()===ctx.state.user.id).length===0;
+            if (isLike){
+                ctx.status = 400;
+                ctx.body = {alerdyliked:'该用户没有点赞过'}
+                return
+            }
+             //获取要删掉的user id
+            const removeIndex = post.likes
+                .map(item=>item.user.toString())
+                .indexOf(id)
+
+            post.likes.splice(removeIndex,1);
+
+            const postUpdate = await Post.findByIdAndUpdate(
+                {_id:id},
+                {$set:post},
+                {new:true}
+            )
+            ctx.body = postUpdate
+        }else {
+            ctx.status = 404;
+            ctx.body = {error:'profile不存在'}
+        }
+    });
+
+/**
+ * @route POST api/posts/comment?id=xxxxxxxxxx
+ * @desc 评论接口
+ * @access 接口是私有的
+ * */
+router.post('/comment',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+        const id=ctx.query.id;
+        const post = await Post.findById(id);
+        const newComment ={
+            text:ctx.request.body.text,
+            name:ctx.request.body.name,
+            avatar:ctx.request.body.avatar,
+            user:ctx.request.body.user,
+        }
+
+        post.comments.unshift(newComment);
+        const postUpdate = await Post.findOneAndUpdate(
+            {_id:id},
+            {$set:post},
+            {new:true}
+        )
+        ctx.body = postUpdate
+    });
+
+/**
+ * @route DELETE api/posts/comment?id=xxxxxxxxxx&comment_id=xxxxxxx
+ * @desc 删除评论接口
+ * @access 接口是私有的
+ * */
+router.delete('/comment',
+    passport.authenticate('jwt', {session: false}),
+    async ctx => {
+        const id=ctx.query.id;
+        const comment_id = ctx.query.comment_id;
+
+        const post = await Post.findById(id);
+        const isComment = post.comments.filter(comment=>comment_id.toString()===comment_id).length===0
+        if (isComment){
+            ctx.status=400;
+            ctx.body={commentnotexists:'该评论不存在'}
+            return
+        }
+
+        //找到评论信息
+        const removeIndex = post.comments
+            .map(item=>item.id.toString())
+            .indexOf(comment_id)
+        post.comments.splice(removeIndex,1);
+        const postUpdate = await Post.findByIdAndUpdate(
+            {_id:id},
+            {$set:post},
+            {new:true}
+        )
+        ctx.body = postUpdate
     });
 module.exports = router.routes()
