@@ -47,12 +47,12 @@ router.get('/',
 router.post('/',
     passport.authenticate('jwt', {session: false}),
     async ctx => {
-        const {errors,isValid} =validateProfileInput(ctx.request.body);
+        const {errors, isValid} = validateProfileInput(ctx.request.body);
 
         //判断是否验证通过
-        if (!isValid){
-            ctx.status=400;
-            ctx.body=errors
+        if (!isValid) {
+            ctx.status = 400;
+            ctx.body = errors
             return
         }
 
@@ -99,4 +99,60 @@ router.post('/',
             })
         }
     })
+
+/**
+ * @route POST api/profile/handle?handle=test
+ * @desc 通过handle获取个人信息接口
+ * @access 接口是公开的
+ * */
+router.get('/handle', async ctx => {
+    const errors={}
+    const handle = ctx.query.handle;
+    const profile = await Profile.find({handle: handle}).populate('user', ['name', 'avatar']);
+
+    if (profile.length<1){
+        errors.noprofile ='未找到该用户信息';
+        ctx.status=404;
+        ctx.body=errors;
+    }else {
+        ctx.body=profile[0];
+    }
+})
+
+/**
+ * @route POST api/profile/user?user_id=xxxxxxxx
+ * @desc 通过user获取个人信息接口
+ * @access 接口是公开的
+ * */
+router.get('/user', async ctx => {
+    const errors={}
+    const user_id = ctx.query.user_id;
+    const profile = await Profile.find({user: user_id}).populate('user', ['name', 'avatar']);
+
+    if (profile.length<1){
+        errors.noprofile ='未找到该用户信息';
+        ctx.status=404;
+        ctx.body=errors;
+    }else {
+        ctx.body=profile[0];
+    }
+})
+
+/**
+ * @route POST api/profile/all
+ * @desc 获取所有人信息接口
+ * @access 接口是公开的
+ * */
+router.get('/all', async ctx => {
+    const errors={}
+    const profiles = await Profile.find({}).populate('user', ['name', 'avatar']);
+
+    if (profiles.length<1){
+        errors.noprofile ='没有任何用户信息';
+        ctx.status=404;
+        ctx.body=errors;
+    }else {
+        ctx.body=profiles
+    }
+})
 module.exports = router.routes()
