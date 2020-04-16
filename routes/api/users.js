@@ -95,7 +95,7 @@ router.post('/login', async ctx => {
         if (result) {
             //返回token
             const payload = {id: user.id, name: user.name, avatar: user.avatar};
-            const token = jwt.sign(payload, keys.secretOrKey, {expiresIn: 60*60*24*7});
+            const token = jwt.sign(payload, keys.secretOrKey, {expiresIn: 3600*6*24*7});
             ctx.status = 200;
             ctx.body = {success: true, token: "Bearer " + token};
         } else {

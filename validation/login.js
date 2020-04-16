@@ -13,8 +13,6 @@ module.exports =function validateLoginInput(data) {
         errors.email='邮箱不能为空'
     }
 
-
-
     if (Validator.isEmpty(data.password)){
         errors.password='密码不能为空'
     }
