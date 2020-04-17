@@ -109,7 +109,7 @@ router.post('/',
  * @desc 通过handle获取个人信息接口
  * @access 接口是公开的
  * */
-router.get('/handle/:handle', async ctx => {
+router.get('/handle', async ctx => {
     const errors = {}
     const handle = ctx.query.handle;
     const profile = await Profile.find({handle: handle}).populate('user', ['name', 'avatar']);
@@ -274,12 +274,11 @@ router.post('/education',
  * @desc 工作经验删除接口
  * @access 接口是私有的
  * */
-router.delete('/experience/:exp_id',
+router.delete('/experience',
     passport.authenticate('jwt', {session: false}),
     async ctx => {
         //拿到id
         const exp_id = ctx.query.exp_id;
-
         //查询
         const profile = await Profile.find({user: ctx.state.user.id})
         if (profile[0].experience.length > 0) {
@@ -309,7 +308,7 @@ router.delete('/experience/:exp_id',
  * @desc 教育经历删除接口
  * @access 接口是私有的
  * */
-router.delete('/education/:edu_id',
+router.delete('/education',
     passport.authenticate('jwt', {session: false}),
     async ctx => {
         //拿到id
