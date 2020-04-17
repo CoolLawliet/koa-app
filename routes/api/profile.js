@@ -109,7 +109,7 @@ router.post('/',
  * @desc 通过handle获取个人信息接口
  * @access 接口是公开的
  * */
-router.get('/handle', async ctx => {
+router.get('/handle/:handle', async ctx => {
     const errors = {}
     const handle = ctx.query.handle;
     const profile = await Profile.find({handle: handle}).populate('user', ['name', 'avatar']);
