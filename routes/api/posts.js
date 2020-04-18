@@ -19,7 +19,7 @@ router.get('/test', async ctx => {
 
 /**
  * @route POST api/posts
- * @desc 创建留言接口
+ * @desc 创建评论接口
  * @access 接口是公开的
  * */
 router.post('/',
@@ -51,7 +51,7 @@ router.post('/',
 
 /**
  * @route GET api/posts/all
- * @desc 获取所有留言接口
+ * @desc 获取所有评论接口
  * @access 接口是公开的
  * */
 router.get('/all', async ctx => {
@@ -187,7 +187,7 @@ router.post('/unlike',
 
 /**
  * @route POST api/posts/comment?id=xxxxxxxxxx
- * @desc 评论接口
+ * @desc 留言接口
  * @access 接口是私有的
  * */
 router.post('/comment',
